@@ -19,6 +19,7 @@ class RRTMG(Radiation):
     """RRTMG radiation scheme using the CliMT python wrapper."""
 
     def __init__(self, *args, solar_constant=510, mcica=False,
+                 aerosol_type='no_aerosol',
                  **kwargs):
         """
         Parameters:
@@ -44,6 +45,16 @@ class RRTMG(Radiation):
                     use the mcica version of RRTMG (needed for partly cloudy
                     skies)
 
+            aerosol_type (str):
+                Choose how to treat aerosols in the shortwave.
+                * :code:'no_aerosols'
+                    Do not include aerosols
+                * :code:'ecmwf'
+                    Set :code:'aerosol_optical_depth_at_55_micron'.
+                    Other shortwave aerosol parameters are ignored.
+                * :code:`all_aerosol_properties`
+                    Input all aerosol optical properties
+                    (:code:'aerosol_optical_depth_at_55_micron' is ignored)
         """
         super().__init__(*args, **kwargs)
         self._state_lw = None
@@ -58,6 +69,8 @@ class RRTMG(Radiation):
         # cloud class or instance.
         self._cloud_optical_properties = None
         self._cloud_ice_properties = None
+
+        self._aerosol_type = aerosol_type
 
         self.solar_constant = solar_constant
 
@@ -80,7 +93,8 @@ class RRTMG(Radiation):
             cloud_optical_properties=self._cloud_optical_properties,
             cloud_ice_properties=self._cloud_ice_properties,
             cloud_liquid_water_properties='radius_dependent_absorption',
-            cloud_overlap_method=overlap,
+            cloud_overlap_method='maximum_random',
+            aerosol_type=self._aerosol_type,
             mcica=self._is_mcica)
         state_lw = {}
         state_sw = {}
