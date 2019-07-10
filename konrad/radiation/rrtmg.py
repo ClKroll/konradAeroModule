@@ -190,6 +190,12 @@ class RRTMG(Radiation):
 
         return
 
+    def update_aerosol_radiative_properties(self, aerosol, state_sw, state_lw):
+        state_sw['aerosol_optical_depth_at_55_micron'] = aerosol.optical_depth_at_55_micron
+        state_lw['longwave_optical_thickness_due_to_aerosol'] = aerosol.optical_thickness_due_to_aerosol
+
+        return
+
     def update_radiative_state(self, atmosphere, surface, state0, sw=True):
         """ Update CliMT formatted atmospheric state using parameters from our
         model.
@@ -247,13 +253,15 @@ class RRTMG(Radiation):
 
         return state0
 
-    def radiative_fluxes(self, atmosphere, surface, cloud):
+    def radiative_fluxes(self, atmosphere, surface, cloud, #aerosol,
+                         ):
         """Returns shortwave and longwave fluxes and heating rates.
 
         Parameters:
             atmosphere (konrad.atmosphere.Atmosphere): atmosphere model
             surface (konrad.surface): surface model
             cloud (konrad.cloud): cloud model
+            # aerosol (konrad.aerosol): aerosol model
 
         Returns:
             tuple: containing two dictionaries, one of air temperature
@@ -266,6 +274,8 @@ class RRTMG(Radiation):
                     atmosphere, surface)
             self.update_cloudy_radiative_state(cloud, self._state_lw, sw=False)
             self.update_cloudy_radiative_state(cloud, self._state_sw, sw=True)
+            #self.update_aerosol_radiative_properties(
+            #    aerosol, state_sw=self._state_sw, state_lw=self._state_lw)
 
         # if there are clouds update the cloud properties for the radiation
         if not isinstance(cloud, ClearSky):
