@@ -38,7 +38,9 @@ class RCE:
     def __init__(self, atmosphere, timestep='3h', max_duration='5000d',
                  outfile=None, experiment='RCE', writeevery='1d', delta=1e-4,
                  radiation=None, ozone=None, humidity=None, surface=None,
-                 cloud=None, convection=None, lapserate=None, upwelling=None):
+                 cloud=None, convection=None, lapserate=None, upwelling=None,
+                 aerosol=None,
+                 ):
         """Set-up a radiative-convective model.
 
         Parameters:
@@ -93,6 +95,9 @@ class RCE:
 
             upwelling (konrad.upwelling): Upwelling model.
                 Defaults to :class:`konrad.upwelling.NoUpwelling`.
+
+            aerosol (konrad.aerosol): Aerosol model.
+                Defaults to :class:`konrad.aerosol.NoAerosol`.
 
         """
         # Sub-models.
@@ -269,6 +274,8 @@ class RCE:
 
             self.cloud.update_cloud_profile(self.atmosphere,
                                             convection=self.convection)
+
+            #self.aerosol.update_aerosols(self.niter * self.timestep)
 
             # Calculate temperature change for convergence check.
             self.deltaT = (self.atmosphere['T'] - T) / self.timestep
