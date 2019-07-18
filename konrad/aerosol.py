@@ -70,7 +70,6 @@ class VolcanoAerosol(Aerosol):
                         extEarth.ext_earth[lw_band, :, 1].values,
                         fill_value='extrapolate')(heights)
             for sw_band in range(np.shape(extSun.solar_bands)[0]):
-                print('yay sw', sw_band)
                 self.optical_thickness_due_to_aerosol_sw[sw_band, :] = \
                     sc.interpolate.interp1d(
                         extSun.altitude.values,
