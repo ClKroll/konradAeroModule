@@ -15,6 +15,7 @@ from konrad.cloud import (Cloud, ClearSky)
 from konrad.convection import (Convection, HardAdjustment, RelaxedAdjustment)
 from konrad.lapserate import (LapseRate, MoistLapseRate)
 from konrad.upwelling import (Upwelling, NoUpwelling)
+from konrad.aerosol import (Aerosol, NoAerosol)
 
 logger = logging.getLogger(__name__)
 
@@ -126,6 +127,9 @@ class RCE:
 
         self.upwelling = utils.return_if_type(upwelling, 'upwelling',
                                               Upwelling, NoUpwelling())
+        
+        self.aerosol=utils.return_if_type(aerosol, 'aerosol',
+                                          Aerosol, NoAerosol())
 
         self.max_duration = utils.parse_fraction_of_day(max_duration)
         self.timestep = utils.parse_fraction_of_day(timestep)
@@ -212,6 +216,7 @@ class RCE:
                 atmosphere=self.atmosphere,
                 surface=self.surface,
                 cloud=self.cloud,
+                aerosol=self.aerosol,
             )
 
             # Apply heatingrates/fluxes to the the surface.
@@ -275,7 +280,7 @@ class RCE:
             self.cloud.update_cloud_profile(self.atmosphere,
                                             convection=self.convection)
 
-            #self.aerosol.update_aerosols(self.niter * self.timestep)
+            self.aerosol.update_aerosols(self.niter * self.timestep,self.atmosphere)
 
             # Calculate temperature change for convergence check.
             self.deltaT = (self.atmosphere['T'] - T) / self.timestep
