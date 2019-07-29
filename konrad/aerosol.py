@@ -38,6 +38,7 @@ class Aerosol(metaclass=abc.ABCMeta):
 class VolcanoAerosol(Aerosol):
     def __init__(self):
         super().__init__(aerosol_type='all_aerosol_properties')
+        self.aerosolLevelShift=2 #this values should be in km
 
     def update_aerosols(self, time, atmosphere):
         if not np.count_nonzero(self.optical_thickness_due_to_aerosol_sw.values):
@@ -66,32 +67,44 @@ class VolcanoAerosol(Aerosol):
                     #'data/aerosolData/zonAverageOmegaSunbc_aeropt_cmip6_volc_lw_b16_sw_b14_1992.nc'
                 ))
             heights = self.calculateHeightLevels(atmosphere)
+            #the input data has to be scaled to fit to model levels
+            #for compatability with rrtmg input format
+            scaling=np.gradient(heights)
+            
+            if self.aerosolLevelShift:
+                self.aerosolLevelShiftArray=self.aerosolLevelShift*np.ones(np.shape(extEarth.altitude[:]))
+                extEarth.altitude.values=extEarth.altitude.values+self.aerosolLevelShiftArray
+                extSun.altitude.values=extSun.altitude.values+self.aerosolLevelShiftArray
+                gSun.altitude.values=gSun.altitude.values+self.aerosolLevelShiftArray
+                omegaSun.altitude.values=omegaSun.altitude.values+self.aerosolLevelShiftArray
             
             for lw_band in range(np.shape(extEarth.terrestrial_bands)[0]):
                 self.optical_thickness_due_to_aerosol_lw[lw_band, :] = \
-                    sc.interpolate.interp1d(
+                    scaling*sc.interpolate.interp1d(
                         extEarth.altitude.values,
                         extEarth.ext_earth[8,lw_band, :].values,
                         #extEarth.ext_earth[lw_band, :, 1].values,
                         bounds_error=False,
                         fill_value=0)(heights)
+                    
+                
             for sw_band in range(np.shape(extSun.solar_bands)[0]):
                 self.optical_thickness_due_to_aerosol_sw[sw_band, :] = \
-                    sc.interpolate.interp1d(
+                    scaling*sc.interpolate.interp1d(
                         extSun.altitude.values,
                         extSun.ext_sun[sw_band,8, :].values,
                         #extSun.ext_sun[sw_band, :, 1],
                         bounds_error=False,
                         fill_value=0)(heights)
                 self.asymmetry_factor_aerosol_sw[sw_band, :] = \
-                    sc.interpolate.interp1d(
+                    scaling*sc.interpolate.interp1d(
                         gSun.altitude.values,
                         gSun.g_sun[sw_band,8, :].values,
                         #gSun.g_sun[sw_band, :, 1].values,
                         bounds_error=False,
                         fill_value=0)(heights)
                 self.single_scattering_albedo_aerosol_sw[sw_band, :] = \
-                    sc.interpolate.interp1d(
+                    scaling*sc.interpolate.interp1d(
                         omegaSun.altitude.values,
                         omegaSun.omega_sun[sw_band,8, :].values,
                         #omegaSun.omega_sun[sw_band, :, 1].values,
