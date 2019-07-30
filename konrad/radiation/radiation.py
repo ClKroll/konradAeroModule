@@ -72,7 +72,8 @@ class Radiation(Component, metaclass=abc.ABCMeta):
         self['toa'] = (('time',), None)
 
     @abc.abstractmethod
-    def calc_radiation(self, atmosphere, surface, cloud,aerosol):
+
+    def calc_radiation(self, atmosphere, surface, cloud, aerosol):
         pass
 
     def update_heatingrates(self, atmosphere, surface, cloud, aerosol):

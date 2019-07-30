@@ -263,7 +263,7 @@ class RRTMG(Radiation):
             atmosphere (konrad.atmosphere.Atmosphere): atmosphere model
             surface (konrad.surface): surface model
             cloud (konrad.cloud): cloud model
-            # aerosol (konrad.aerosol): aerosol model
+            aerosol (konrad.aerosol): aerosol model
 
         Returns:
             tuple: containing two dictionaries, one of air temperature
@@ -295,7 +295,7 @@ class RRTMG(Radiation):
 
         return lw_fluxes, sw_fluxes
 
-    def calc_cloudy_nomcica_radiation(self, atmosphere, surface, cloud,aerosol):
+    def calc_cloudy_nomcica_radiation(self, atmosphere, surface, cloud, aerosol):
 
         cloud_fraction = deepcopy(cloud.cloud_area_fraction_in_atmosphere_layer)
 
@@ -342,10 +342,11 @@ class RRTMG(Radiation):
             atmosphere (konrad.atmosphere.Atmosphere): Atmosphere model.
             surface (konrad.surface): Surface model.
             cloud (konrad.cloud): cloud model
+            aerosol (konrad.aerosol): aerosol model
         """
         if not self._is_mcica and not isinstance(cloud, ClearSky):
             lw_fluxes, sw_fluxes = self.calc_cloudy_nomcica_radiation(
-                atmosphere, surface, cloud)
+                atmosphere, surface, cloud, aerosol)
         else:
             lw_dT_fluxes, sw_dT_fluxes = self.radiative_fluxes(
                 atmosphere, surface, cloud, aerosol)
