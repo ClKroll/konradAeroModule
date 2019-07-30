@@ -1,0 +1,30 @@
+import abc
+import xarray as xr
+import scipy as sc
+
+
+
+class Aerosol(metaclass=abc.ABCMeta):
+    def __init__(self)#, numlevels):
+        self.optical_thickness_due_to_aerosol_sw=None         #called ext_sun in files
+        self.single_scattering_albedo_aerosol_sw=None     #called omega_sun in files
+        self.asymmetry_factor_aerosol_sw=None       #called g_sun in files
+        self.optical_thickness_due_to_aerosol_lw=None         #called ext_earth in files
+
+    #################################################################
+    #To do: time step updating
+    #For now the aerosols are left constant and are not updated
+    ################################################################
+    def update_aerosols(self, time):
+        if self.optical_thickness_due_to_aerosol_sw==None
+            extEarth=xr.open_dataset('~/Documents/konrad/konrad/zonAverageExtEarthbc_aeropt_cmip6_volc_lw_b16_sw_b14_1992.nc')
+            extSun=xr.open_dataset('~/Documents/konrad/konrad/zonAverageExtSunbc_aeropt_cmip6_volc_lw_b16_sw_b14_1992.nc')	
+            gSun=xr.open_dataset('~/Documents/konrad/konrad/zonAveragegSunhbc_aeropt_cmip6_volc_lw_b16_sw_b14_1992.nc')	
+            omegaSun=xr.open_dataset('~/Documents/konrad/konrad/zonAverageOmegaSunbc_aeropt_cmip6_volc_lw_b16_sw_b14_1992.nc')
+            for lw_band in range(0,np.shape(aerosolData.terrestrail_bands[0])):
+                self.optical_thickness_due_to_aerosol_lw[lw_band,:]=sc.interpolate.interp1d(extEarth.plev,extEarth.ext_earth[1,:,1])(atmosphere['phlev'])
+            for sw_band in range(0,np.shape(aerosolData.solar_bands[0])):
+                self.optical_thickness_due_to_aerosol_sw[sw_band,:]=sc.interpolate.interp1d(ext_sun.plev,ext_sun.ext_sun[1,:,1])(atmosphere['phlev'])
+                self.asymmetry_factor_aerosol_sw[sw_band,:]=sc.interpolate.interp1d(gSun.plev,gSun.g_sun[1,:,1])(atmosphere['phlev'])				 					  		                   self.single_scattering_albedo_aerosol_sw[sw_band,:]=sc.interpolate.interp1d(omegaSun.plev,omegaSun.omega_sun[1,:,1])(atmosphere['phlev'])
+        else
+    return
