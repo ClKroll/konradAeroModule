@@ -272,13 +272,13 @@ class RRTMG(Radiation):
         if self._state_lw is None or self._state_sw is None:  # first time only
             self._cloud_optical_properties = cloud._rrtmg_cloud_optical_properties
             self._cloud_ice_properties = cloud._rrtmg_cloud_ice_properties
+            self._aerosol_type = aerosol._aerosol_type
             self._state_lw, self._state_sw = self.init_radiative_state(
                     atmosphere, surface)
-            self.update_cloudy_radiative_state(cloud, self._state_lw, sw=False)
-            self.update_cloudy_radiative_state(cloud, self._state_sw, sw=True)
-            self._aerosol_type=aerosol._aerosol_type
             self.update_aerosol_radiative_properties(
                 aerosol, state_sw=self._state_sw, state_lw=self._state_lw)
+            self.update_cloudy_radiative_state(cloud, self._state_lw, sw=False)
+            self.update_cloudy_radiative_state(cloud, self._state_sw, sw=True)
 
         # if there are clouds update the cloud properties for the radiation
         if not isinstance(cloud, ClearSky):
