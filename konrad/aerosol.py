@@ -11,12 +11,13 @@ from konrad.cloud import get_waveband_data_array
 
 
 class Aerosol(metaclass=abc.ABCMeta):
-    def __init__(self, aerosol_type='no_aerosol'):#, numlevels):
+    def __init__(self, aerosol_type='no_aerosol', aerosolLevelShiftInput=0):#, numlevels):
         a = get_waveband_data_array(0, units='dimensionless', numlevels=200, sw=True)   #called ext_sun in files
         b = get_waveband_data_array(0, units='dimensionless', numlevels=200, sw=True)    #called omega_sun in files
         c = get_waveband_data_array(0, units='dimensionless', numlevels=200, sw=True)         #called g_sun in files
         d = get_waveband_data_array(0, units='dimensionless', numlevels=200, sw=False)     #called ext_earth in files
         self._aerosol_type = aerosol_type
+        self.aerosolLevelShift=aerosolLevelShiftInput
         self.optical_thickness_due_to_aerosol_sw = a.T
         self.single_scattering_albedo_aerosol_sw = b.T
         self.asymmetry_factor_aerosol_sw = c.T
@@ -36,9 +37,9 @@ class Aerosol(metaclass=abc.ABCMeta):
 
 
 class VolcanoAerosol(Aerosol):
-    def __init__(self):
+    def __init__(self,aerosolLevelShiftInput=0):
         super().__init__(aerosol_type='all_aerosol_properties')
-        self.aerosolLevelShift=2 #this values should be in km
+        self.aerosolLevelShift=aerosolLevelShiftInput
 
     def update_aerosols(self, time, atmosphere):
         if not np.count_nonzero(self.optical_thickness_due_to_aerosol_sw.values):
