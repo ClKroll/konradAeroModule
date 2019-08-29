@@ -10,12 +10,15 @@ from sympl import DataArray
 from konrad.cloud import get_waveband_data_array
 
 
+
+
 class Aerosol(metaclass=abc.ABCMeta):
-    def __init__(self, aerosol_type='no_aerosol', aerosolLevelShiftInput=0):#, numlevels):
-        a = get_waveband_data_array(0, units='dimensionless', numlevels=200, sw=True)   #called ext_sun in files
-        b = get_waveband_data_array(0, units='dimensionless', numlevels=200, sw=True)    #called omega_sun in files
-        c = get_waveband_data_array(0, units='dimensionless', numlevels=200, sw=True)         #called g_sun in files
-        d = get_waveband_data_array(0, units='dimensionless', numlevels=200, sw=False)     #called ext_earth in files
+    def __init__(self,atmNumlevels, aerosol_type='no_aerosol', aerosolLevelShiftInput=0):
+         
+        a = get_waveband_data_array(0, units='dimensionless', numlevels=atmNumlevels, sw=True)   #called ext_sun in files
+        b = get_waveband_data_array(0, units='dimensionless', numlevels=atmNumlevels, sw=True)    #called omega_sun in files
+        c = get_waveband_data_array(0, units='dimensionless', numlevels=atmNumlevels, sw=True)         #called g_sun in files
+        d = get_waveband_data_array(0, units='dimensionless', numlevels=atmNumlevels, sw=False)     #called ext_earth in files
         self._aerosol_type = aerosol_type
         self.aerosolLevelShift=aerosolLevelShiftInput
         self.optical_thickness_due_to_aerosol_sw = a.T
@@ -37,8 +40,8 @@ class Aerosol(metaclass=abc.ABCMeta):
 
 
 class VolcanoAerosol(Aerosol):
-    def __init__(self,aerosolLevelShiftInput=0):
-        super().__init__(aerosol_type='all_aerosol_properties')
+    def __init__(self,atmNumlevels, aerosolLevelShiftInput=0):
+        super().__init__(atmNumlevels,aerosol_type='all_aerosol_properties')
         self.aerosolLevelShift=aerosolLevelShiftInput
 
     def update_aerosols(self, time, atmosphere):
@@ -118,8 +121,8 @@ class VolcanoAerosol(Aerosol):
 
 
 class NoAerosol(Aerosol):
-    def __init__(self):
-        super().__init__(aerosol_type='no_aerosol')
+    def __init__(self,atmNumlevels):
+        super().__init__(atmNumlevels,aerosol_type='no_aerosol')
         
     def update_aerosols(self, time, atmosphere):
         return

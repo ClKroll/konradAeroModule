@@ -129,7 +129,9 @@ class RCE:
                                               Upwelling, NoUpwelling())
         
         self.aerosol=utils.return_if_type(aerosol, 'aerosol',
-                                          Aerosol, NoAerosol())
+                                          Aerosol, 
+                                          NoAerosol(self.atmosphere['plev'].size)
+                                          )
 
         self.max_duration = utils.parse_fraction_of_day(max_duration)
         self.timestep = utils.parse_fraction_of_day(timestep)
@@ -254,8 +256,6 @@ class RCE:
                 timestep=self.timestep,
             )
 
-            # TODO: Consider implementing an Atmosphere.update_diagnostics()
-            #  method to include e.g. convective top in the output.
             self.atmosphere.update_height()
             z = self.atmosphere.get('z')[0, :]
             if isinstance(self.convection, HardAdjustment) or isinstance(
