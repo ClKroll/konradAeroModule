@@ -13,7 +13,7 @@ from konrad.cloud import get_waveband_data_array
 
 
 class Aerosol(metaclass=abc.ABCMeta):
-    def __init__(self,atmNumlevels, aerosol_type='no_aerosol', aerosolLevelShiftInput=0,includeSWForcing=True,includeLWForcing=True):
+    def __init__(self,atmNumlevels, aerosol_type='no_aerosol', aerosolLevelShiftInput=0,includeSWForcing=True,includeLWForcing=True,includeScattering=True,includeAbsorption=True):
          
         a = get_waveband_data_array(0, units='dimensionless', numlevels=atmNumlevels, sw=True)   #called ext_sun in files
         b = get_waveband_data_array(0, units='dimensionless', numlevels=atmNumlevels, sw=True)    #called omega_sun in files
@@ -23,6 +23,8 @@ class Aerosol(metaclass=abc.ABCMeta):
         self.includeSWForcing=includeSWForcing
         self.includeLWForcing=includeLWForcing
         self.aerosolLevelShift=aerosolLevelShiftInput
+        self.includeScattering=includeScattering
+        self.includeAbsorption=includeAbsorption
         self.optical_thickness_due_to_aerosol_sw = a.T
         self.single_scattering_albedo_aerosol_sw = b.T
         self.asymmetry_factor_aerosol_sw = c.T
@@ -121,6 +123,31 @@ class VolcanoAerosol(Aerosol):
                             #omegaSun.omega_sun[sw_band, :, 1].values,
                             bounds_error=False,
                             fill_value=0)(heights)
+            
+                if not self.includeScattering: '''only absorption'''
+                    try:
+                        self.optical_thickness_due_to_aerosol_sw= \
+                                    np.multiply(self.optical_thickness_due_to_aerosol_sw,
+                                                np.subtract(np.ones_like(self.optical_thickness_due_to_aerosol_sw),
+                                                            self.single_scattering_albedo_aerosol_sw))
+                        self.asymmetry_factor_aerosol_sw=np.zeros_like(self.asymmetry_factor_aerosol_sw)
+                        self.single_scattering_albedo_aerosol_sw=np.zeros_like(self.single_scattering_albedo_aerosol_sw)
+                        if not self.includeAbsorption:
+                            raise ValueError('For aerosols scattering and absorption can not both be deactivated')
+                    except (ValueError):
+                        exit('Please choose valid input data.')
+                        
+                if not self.includeAbsorption: '''only scattering'''
+                    try:
+                        self.optical_thickness_due_to_aerosol_sw= \
+                                    np.multiply(self.optical_thickness_due_to_aerosol_sw,
+                                                self.single_scattering_albedo_aerosol_sw)
+                        self.single_scattering_albedo_aerosol_sw=np.ones_like(self.single_scattering_albedo_aerosol_sw)
+                        if not self.includeScattering:
+                            raise ValueError('For aerosols scattering and absorption can not both be deactivated')
+                    except (ValueError):
+                        exit('Please choose valid input data.')
+                    
 
     def calculateHeightLevels(self, atmosphere):
         heights = ty.pressure2height(atmosphere['plev'], atmosphere['T'][0, :])/1000
