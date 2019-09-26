@@ -21,7 +21,7 @@ create an appropriate radiation model, and run an RCE simulation.
 Create an instance of a cloud class, *e.g.* a :py:class:`PhysicalCloud`,
 create an appropriate radiation model and run radiative transfer.
     >>> import konrad
-    >>> numlevels=201
+    >>> numlevels=200
     >>> plev, phlev = konrad.utils.get_pressure_grids(1000e2, 1,numlevels)
     >>> atmosphere = konrad.atmosphere.Atmosphere(plev)
     >>> aerosol = konrad.aerosol.VolcanoAerosol(
@@ -36,11 +36,11 @@ The aerosol class has a set of parameters:
     aerosol_type: choose between 'no_aerosol' for no volcanic aerosols
                                  'all_aerosol_properties' for volcanic aerosols,
                                       described by LW (ext) and SW (ext, g, ssa)
-                                  'xxx' for volcanic aerosols, described by LW
+                                  'ecmwf' for volcanic aerosols, described by LW
                                       (ext) and SW (ext at 550 mu m) (currently
                                       not implemented in version available online)
     aerosolLevelShiftInput: choose the shift of the aerosol layer relative to the
-                    original Pinatubo aerosol layer (units in km)
+                         original Pinatubo aerosol layer (units in km)
     monthsAfterEruption: chose the forcing data to describe the aerosol characteristics
                          x months after the eruption. Mount Pinatubo erupted on June 15, 1991.
                          allowed inputs in [0,18]
@@ -63,36 +63,38 @@ import xarray as xr
 import scipy as sc
 import numpy as np
 import typhon.physics as ty
-from sympl import DataArray
 
-#from konrad import constants
 from konrad.cloud import get_waveband_data_array
+from konrad.cloud import get_aerosol_waveband_data_array
 
 
 
 
 class Aerosol(metaclass=abc.ABCMeta):
-    def __init__(self,atmNumlevels, aerosol_type='no_aerosol', aerosolLevelShiftInput=0,monthsAfterEruption=2,includeSWForcing=True,includeLWForcing=True,includeScattering=True,includeAbsorption=True):
+    def __init__(self,atmNumlevels, aerosol_type='no_aerosol', aerosolLevelShiftInput=0,monthsAfterEruption=2,includeSWForcing=True,\
+                 includeLWForcing=True,includeScattering=True,includeAbsorption=True):
          
-        a = get_waveband_data_array(0, units='dimensionless', numlevels=atmNumlevels, sw=True)   #called ext_sun in files
-        b = get_waveband_data_array(0, units='dimensionless', numlevels=atmNumlevels, sw=True)    #called omega_sun in files
-        c = get_waveband_data_array(0, units='dimensionless', numlevels=atmNumlevels, sw=True)         #called g_sun in files
-        d = get_waveband_data_array(0, units='dimensionless', numlevels=atmNumlevels, sw=False)     #called ext_earth in files
         self._aerosol_type = aerosol_type
         self.includeSWForcing=includeSWForcing
         self.includeLWForcing=includeLWForcing
         self.aerosolLevelShift=aerosolLevelShiftInput
         self.includeScattering=includeScattering
         self.includeAbsorption=includeAbsorption
-        self.optical_thickness_due_to_aerosol_sw = a.T
-        self.single_scattering_albedo_aerosol_sw = b.T
-        self.asymmetry_factor_aerosol_sw = c.T
-        self.optical_thickness_due_to_aerosol_lw = d.T
+        self.optical_thickness_due_to_aerosol_sw = \
+            get_aerosol_waveband_data_array(0, units='dimensionless', numlevels=atmNumlevels, sw=True)   #called ext_sun in files
+        self.single_scattering_albedo_aerosol_sw = \
+            get_aerosol_waveband_data_array(0, units='dimensionless', numlevels=atmNumlevels, sw=True) #called omega_sun in files
+        self.asymmetry_factor_aerosol_sw =  \
+            get_aerosol_waveband_data_array(0, units='dimensionless', numlevels=atmNumlevels, sw=True)  #called g_sun in files
+        self.optical_thickness_due_to_aerosol_lw = \
+            get_aerosol_waveband_data_array(0, units='dimensionless', numlevels=atmNumlevels, sw=False) #called ext_earth in files
 
     #################################################################
-    #To do: time step updating
-    #For now the aerosols are left constant and are not updated
-    #implementation for a changing lapse rate, for now it is implemented only for a fixed lapse rate
+    #To do: 
+    #- time step updating
+    #  For now the aerosols are left constant and are not updated
+    #- implementation for a changing lapse rate, for now it is implemented only for a fixed lapse rate
+    #- add the cold point as an output
     ################################################################
     def update_aerosols(self, time, atmosphere):
         return
@@ -105,7 +107,8 @@ class VolcanoAerosol(Aerosol):
     '''
     CMIP6 volcanic aerosols (Mount Pinatubo eruption)
     '''
-    def __init__(self,atmNumlevels, aerosolLevelShiftInput=0,includeSWForcing=True,includeLWForcing=True,includeScattering=True,includeAbsorption=True):
+    def __init__(self,atmNumlevels, aerosolLevelShiftInput=0,includeSWForcing=True,\
+                 includeLWForcing=True,includeScattering=True,includeAbsorption=True):
         super().__init__(atmNumlevels,aerosol_type='all_aerosol_properties')
         self.aerosolLevelShift=aerosolLevelShiftInput
         self.numlevels=atmNumlevels
@@ -197,30 +200,34 @@ class VolcanoAerosol(Aerosol):
                             #omegaSun.omega_sun[sw_band, :, 1].values,
                             bounds_error=False,
                             fill_value=0)(heights)
-              # '''only absorption'''
+ 
                 if not self.includeScattering: 
+                    '''only absorption
+                        SSA'=0, Omega'=Omega,Ext'=Ext*(1-SSA)'''
                     try:
-                        a=get_waveband_data_array(1, units='dimensionless', numlevels=self.numlevels, sw=True).T
-                        result= np.multiply(self.optical_thickness_due_to_aerosol_sw, np.subtract(a,self.single_scattering_albedo_aerosol_sw)),
+                        a=get_aerosol_waveband_data_array(1, units='dimensionless', numlevels=self.numlevels, sw=True)
+                        result= np.multiply(self.optical_thickness_due_to_aerosol_sw, \
+                                            np.subtract(a,self.single_scattering_albedo_aerosol_sw)),
                                             
-                        self.optical_thickness_due_to_aerosol_sw=get_waveband_data_array(result[0].values.T, units='dimensionless', numlevels=self.numlevels, sw=True).T
-                                    #__sub__(self, other)
-
-                        #self.asymmetry_factor_aerosol_sw= (get_waveband_data_array(0, units='dimensionless', numlevels=self.numlevels, sw=True)).T 
-                       
-                        self.single_scattering_albedo_aerosol_sw = get_waveband_data_array(0, units='dimensionless', numlevels=self.numlevels, sw=True).T 
+                        self.optical_thickness_due_to_aerosol_sw= \
+                                get_aerosol_waveband_data_array(result[0].values.T, units='dimensionless', numlevels=self.numlevels, sw=True)
+                        self.single_scattering_albedo_aerosol_sw = \
+                                get_aerosol_waveband_data_array(0, units='dimensionless', numlevels=self.numlevels, sw=True) 
                         if not self.includeAbsorption:
                             raise ValueError('For aerosols scattering and absorption can not both be deactivated')
                     except (ValueError):
                         exit('Please choose valid input data.')
                         
-                if not self.includeAbsorption: #'''only scattering'''
+                if not self.includeAbsorption: 
+                    '''only scattering
+                        SSA'=1, Omega'=Omega,Ext'=Ext*SSA'''
                     try:
-                        result= \
-                                    np.multiply(self.optical_thickness_due_to_aerosol_sw,
-                                                self.single_scattering_albedo_aerosol_sw)
-                        self.optical_thickness_due_to_aerosol_sw=get_waveband_data_array(result[0].values.T, units='dimensionless', numlevels=self.numlevels, sw=True).T
-                        self.single_scattering_albedo_aerosol_sw = get_waveband_data_array(1, units='dimensionless', numlevels=self.numlevels, sw=True).T 
+                        result= np.multiply(self.optical_thickness_due_to_aerosol_sw,
+                                            self.single_scattering_albedo_aerosol_sw)
+                        self.optical_thickness_due_to_aerosol_sw= \
+                                get_aerosol_waveband_data_array(result[0].values.T, units='dimensionless', numlevels=self.numlevels, sw=True)
+                        self.single_scattering_albedo_aerosol_sw = \
+                                get_aerosol_waveband_data_array(1, units='dimensionless', numlevels=self.numlevels, sw=True)
                        
                         if not self.includeScattering:
                             raise ValueError('For aerosols scattering and absorption can not both be deactivated')

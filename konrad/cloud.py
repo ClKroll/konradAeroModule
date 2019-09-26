@@ -114,6 +114,14 @@ def get_waveband_data_array(values, units='dimensionless', numlevels=200,
         'Cloud variable input must be a single value, `numpy.ndarray` or a '
         '`sympl.DataArray`')
 
+#This is not a nice implementation... I just added it for testing purposes and
+    # should improve it...
+def get_aerosol_waveband_data_array(values, units='dimensionless', numlevels=200,
+                            sw=True):
+    """Return a DataArray of values."""
+    a=get_waveband_data_array(values, units=units, numlevels=numlevels, sw=sw) 
+    return a.T
+ 
 
 def get_rectangular_profile(z, value, ztop, depth):
     """Produce a rectangular profile, an array containing zeros and the value
