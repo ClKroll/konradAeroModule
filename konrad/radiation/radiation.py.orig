@@ -5,7 +5,7 @@ import logging
 import numpy as np
 import xarray as xr
 from scipy.interpolate import interp1d
-from konrad import aerosol
+
 from konrad import constants
 from konrad.component import Component
 from konrad.radiation.common import fluxes2heating
@@ -77,7 +77,12 @@ class Radiation(Component, metaclass=abc.ABCMeta):
     def calc_radiation(self, atmosphere, surface, cloud, aerosol):
         pass
 
+<<<<<<< HEAD
     def update_heatingrates(self, atmosphere, surface, cloud, aerosol):
+        """Returns `xr.Dataset` containing radiative transfer results."""
+        self.calc_radiation(atmosphere, surface, cloud, aerosol)
+=======
+    def update_heatingrates(self, atmosphere, surface=None, cloud=None):
         """Returns `xr.Dataset` containing radiative transfer results."""
         # If only the atmospheric state is given, assume clear-sky
         # and extrapolate the surface temperatures.
@@ -87,7 +92,11 @@ class Radiation(Component, metaclass=abc.ABCMeta):
             surface = SlabOcean.from_atmosphere(atmosphere)
 
         if cloud is None:
-        self.calc_radiation(atmosphere, surface, cloud, aerosol)
+            cloud = ClearSky.from_atmosphere(atmosphere)
+
+        # Call the interal radiative transfer routines.
+        self.calc_radiation(atmosphere, surface, cloud)
+>>>>>>> konradLukas/master
 
         # self.correct_bias(rad_dataset)
 

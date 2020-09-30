@@ -18,8 +18,12 @@ __all__ = [
 class RRTMG(Radiation):
     """RRTMG radiation scheme using the CliMT python wrapper."""
 
-    def __init__(self, *args, solar_constant=551.58, mcica=False,
+<<<<<<< HEAD
+    def __init__(self, *args, solar_constant=510, mcica=False,
                  aerosol_type='all_aerosol_properties',
+=======
+    def __init__(self, *args, solar_constant=551.58, mcica=False,
+>>>>>>> konradLukas/master
                  **kwargs):
         """
         Parameters:
@@ -355,9 +359,13 @@ class RRTMG(Radiation):
         """
         
         if not self._is_mcica and not isinstance(cloud, ClearSky):
+<<<<<<< HEAD
+            lw_fluxes, sw_fluxes = self.calc_cloudy_nomcica_radiation(
+                atmosphere, surface, cloud, aerosol)
+=======
             if isinstance(cloud, CloudEnsemble):
                 weights, cloud_combinations = cloud.get_combinations()
-                #aerosols have to be added to CloudEnsemble
+
                 lw_fluxes = {}
                 sw_fluxes = {}
                 for weight, cloud_case in zip(weights, cloud_combinations):
@@ -378,7 +386,8 @@ class RRTMG(Radiation):
 
             else:
                 lw_fluxes, sw_fluxes = self.calc_cloudy_nomcica_radiation(
-                    atmosphere, surface, cloud, aerosol)
+                    atmosphere, surface, cloud)
+>>>>>>> konradLukas/master
         else:
             lw_dT_fluxes, sw_dT_fluxes = self.radiative_fluxes(
                 atmosphere, surface, cloud, aerosol)

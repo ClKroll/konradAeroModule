@@ -19,6 +19,7 @@ class FixedRH(Component):
         Parameters:
             rh_func (callable): Callable that describes the vertical
                 relative humidity distribution.
+                If `None`, assume a :class:`HeightConstant` relative humidity.
             stratosphere_coupling (callable): Callable that describes how the
                 humidity should be treated in the stratosphere.
         """
@@ -27,27 +28,19 @@ class FixedRH(Component):
         else:
             self._stratosphere_coupling = stratosphere_coupling
 
-        self._rh_func = rh_func
+        if rh_func is None:
+            self._rh_func = HeightConstant()
+        else:
+            self._rh_func = rh_func
+
         self._rh_profile = None
 
     @property
-    def attrs(self):
-        # Overrides ``Component.attrs`` by returning a composite of the
-        # attribtues of both ``rh_func`` and ``stratosphere_coupling``.
-        # The returned attributes are prefixed with their parent-attribute's
-        # name for clarity.
-        attrs = dict(
-            **prefix_dict_keys(
-                getattr(self._rh_func, 'attrs', {}), 'rh_func'
-            ),
-            **prefix_dict_keys(
-                self._stratosphere_coupling.attrs, 'stratosphere_coupling',
-            )
-        )
-        attrs['rh_func/class'] = self.rh_func
-        attrs['stratosphere_coupling/class'] = self.stratosphere_coupling
-
-        return attrs
+    def netcdf_subgroups(self):
+        return {
+            'rh_func': self._rh_func,
+            'stratosphere_coupling': self._stratosphere_coupling,
+        }
 
     def hash_attributes(self):
         # Make sure that non-``Component`` attributes do not break hashing.
@@ -74,19 +67,8 @@ class FixedRH(Component):
         Returns:
             ndarray: Water vapor profile [VMR].
         """
-        if self._rh_func is not None:
-           rh_profile = self._rh_func(atmosphere, **kwargs)
-        else:
-            if self._rh_profile is None:
-                self._rh_profile = vmr2relative_humidity(
-                        vmr=atmosphere['H2O'][-1],
-                        pressure=atmosphere['plev'],
-                        temperature=atmosphere['T'][-1]
-                    )
-            rh_profile = self._rh_profile
-
         atmosphere['H2O'][-1, :] = relative_humidity2vmr(
-            relative_humidity=rh_profile,
+            relative_humidity=self._rh_func(atmosphere, **kwargs),
             pressure=atmosphere['plev'],
             temperature=atmosphere['T'][-1]
 

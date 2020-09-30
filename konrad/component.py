@@ -1,5 +1,5 @@
-import collections
 import operator
+from collections.abc import Hashable
 
 import numpy as np
 import xarray as xr
@@ -39,6 +39,27 @@ class Component:
 
         return instance
 
+    @classmethod
+    def from_netcdf(cls, ncfile, timestep=-1, *args, **kwargs):
+        """Load a model component from a netCDF file.
+
+        Note:
+            The :class:`konrad.netcdf.NetcdfHandler` converts variables
+            of type `double` variables into `float` to reduce disk space.
+            However, the underlying `climt` library requires input
+            for :class:`konrad.radiation.RRTMG` to be of type `double`.
+            Make sure to perform the respective typecasting
+            when reading variables from netCDF files.
+
+        Parameters:
+            ncfile (str): Path to the netCDF file.
+            timestep (int): Index of timestep to read.
+
+        """
+        raise NotImplementedError(
+            f"{cls.__name__} does not support reading of netCDF files."
+        )
+
     def __setattr__(self, name, value):
         object.__setattr__(self, name, value)
 
@@ -46,7 +67,13 @@ class Component:
             self._attrs[name] = value
 
     def __getattr__(self, name):
-        return self._attrs[name]
+        if name.startswith('__'):
+            raise AttributeError
+
+        try:
+            return self._attrs[name]
+        except KeyError as exc:
+            raise AttributeError(exc)
 
     @property
     def attrs(self):
@@ -74,6 +101,24 @@ class Component:
         """Dictionary containing all data variables and their dimensions."""
         return self._data_vars
 
+    @property
+    def netcdf_subgroups(self):
+        """Define subgroups used when storing to netCDF file.
+
+        Components that are used as wrappers for other components (e.g.
+        :class:`konrad.humidity.FixedRH`) can define names and object
+        references for the wrapped components.
+        Those will be used when storing to netCDF files.
+
+        Examples:
+            >>> FixedRH.netcdf_subgroups
+            {'rh_func': <CacheFromAtmosphere() object at ...>,
+             'stratosphere_coupling': <ColdPointCoupling() object at ...>}
+
+        Type: dict-like
+        """
+        raise AttributeError('No netCDF subgroups defined.')
+
     def __repr__(self):
         dims = ', '.join(f'{d}: {np.size(v)}' for d, v in self.coords.items())
         return f'<{self}({dims}) object at {id(self)}>'
@@ -91,7 +136,7 @@ class Component:
                                      key=operator.itemgetter(0))
 
         hashable_values = tuple(item[1] for item in attrs_sorted_by_key
-                                if isinstance(item[1], collections.Hashable))
+                                if isinstance(item[1], Hashable))
 
         # Include the class name to distinguish between different
         # inheriting classes using the same attributes.

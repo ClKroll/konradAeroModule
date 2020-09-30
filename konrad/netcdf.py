@@ -30,16 +30,26 @@ def convert_unsupported_types(variable):
     if isinstance(variable, str):
         return np.asarray([variable])
 
+    if hasattr(variable, 'values'):
+        return variable.values
+
     return variable
 
 
 class NetcdfHandler:
     """A netCDF file handler.
 
+    Note:
+        The netCDF handler typecasts variables from ``double`` into ``float``
+        in order to save disk space.
+        Developers need to convert variables back into ``double``
+        when implementing ``konrad.component.Component.from_netcdf()``
+        methods for model components.
+
     Usage:
         >>> rce = konrad.RCE(...)
         >>> nc = NetcdfHandler('output.nc', rce)  # create output file
-        >>> nc.write(rce)  # write (append) current RCE state to file
+        >>> nc.write()  # write (append) current RCE state to file
 
     """
     def __init__(self, filename, rce):
@@ -49,7 +59,7 @@ class NetcdfHandler:
         self.udim = 'time'
         self.udim_size = 0
         self.groups = []
-        self._component_cache = []
+        self._component_cache = {}
 
         self.create_file()
 
@@ -73,10 +83,13 @@ class NetcdfHandler:
     def create_variable(self, group, name, value, dims=()):
         value = convert_unsupported_types(value)
 
+        dtype = np.asarray(value).dtype
         variable = group.createVariable(
             varname=name,
-            datatype=np.asarray(value).dtype,
+            # Store double variables in single precision to save disk space.
+            datatype="float32" if dtype == "float64" else dtype,
             dimensions=dims,
+            zlib=True,
         )
         variable[:] = value
 
@@ -115,7 +128,7 @@ class NetcdfHandler:
 
     def append_group(self, component, groupname):
         with netCDF4.Dataset(self.filename, 'a') as root:
-            group = root.groups[groupname]
+            group = root[groupname]
 
             for varname, (dims, data) in component.data_vars.items():
                 if self.udim not in dims:
@@ -126,40 +139,50 @@ class NetcdfHandler:
 
                 group.variables[varname][tuple(s)] = data
 
-    def expand_unlimitied_dimension(self):
+    def expand_unlimited_dimension(self):
         with netCDF4.Dataset(self.filename, 'a') as root:
             self.udim_size = root.dimensions[self.udim].size
 
-            root[self.udim][self.udim_size] = self.rce.get_hours_passed()
+            desc = constants.variable_description.get(self.udim, {})
+            root[self.udim][self.udim_size] = netCDF4.date2num(
+                self.rce.time,
+                units=desc["units"],
+                calendar=desc["calendar"],
+            )
 
     def get_components(self):
         """Return a list of non-empty non-private model components."""
         if len(self._component_cache) == 0:
-            for attr in dir(self.rce):
-                if ((not attr.startswith('_')
-                     and isinstance(getattr(self.rce, attr), Component))):
-                    self._component_cache.append(attr)
+            # Ensure that the atmosphere component is stored first as it holds
+            # the common coordinates `plev` and `phlev`.
+            self._component_cache['atmosphere'] = self.rce.atmosphere
 
-        # Ensure that the atmosphere component is stored first as it holds
-        # the common coordinates `plev` and `phlev`.
-        self._component_cache.sort()
-        _move_item_to_index(self._component_cache, 'atmosphere', 0)
+            for attr_name in dir(self.rce):
+                attr = getattr(self.rce, attr_name)
+                if attr_name.startswith('_') or not isinstance(attr, Component):
+                    continue  # Only cache (#1) non-private (#2) components.
+
+                if hasattr(attr, "netcdf_subgroups"):
+                    for sname, sgroup in attr.netcdf_subgroups.items():
+                        self._component_cache[f"{attr_name}/{sname}"] = sgroup
+                else:
+                    self._component_cache[attr_name] = attr
 
         logger.debug(f'Components for netCDF file: "{self._component_cache}".')
 
         return self._component_cache
 
     def initialize_file(self):
-        for component in self.get_components():
-            self.create_group(getattr(self.rce, component), component)
+        for name, component in self.get_components().items():
+            self.create_group(component, name)
 
         with netCDF4.Dataset(self.filename, 'a') as root:
             root.variables[self.udim][:] = 0
 
     def append_to_file(self):
-        self.expand_unlimitied_dimension()
-        for component in self.get_components():
-            self.append_group(getattr(self.rce, component), component)
+        self.expand_unlimited_dimension()
+        for name, component in self.get_components().items():
+            self.append_group(component, name)
 
     def write(self):
         """Write current state of the RCE model to the netCDF file."""

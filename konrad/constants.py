@@ -36,7 +36,7 @@ variable_description = {
     'time': {
         'standard_name': 'time',
         'units': 'hours since 0001-01-01 00:00:00.0',
-        'calender': 'gregorian',
+        'calendar': 'gregorian',
         },
     'T': {
         'units': 'K',
@@ -63,7 +63,7 @@ variable_description = {
         },
     'N2O': {
         'units': '1',
-        'standard_name': 'nitrogene_mixing_ratio',
+        'standard_name': 'nitrous_oxide_mixing_ratio',
         'arts_name': 'abs_species-N2O',
         'dims': ('plev',),
         'default_vmr': 306e-9,
@@ -85,7 +85,7 @@ variable_description = {
         'units': '1',
         'standard_name': 'carbon_dioxide_mixing_ratio',
         'arts_name': 'abs_species-CO2',
-        'dims': ('plev',),
+        'dims': ('time', 'plev',),
         'default_vmr': 348e-6,
         },
     'CO': {

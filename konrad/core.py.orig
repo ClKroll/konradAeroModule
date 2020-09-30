@@ -36,6 +36,14 @@ class RCE:
 
     """
 
+<<<<<<< HEAD
+    def __init__(self, atmosphere, timestep='3h', max_duration='5000d',
+                 outfile=None, experiment='RCE', writeevery='1d', delta=1e-4,
+                 radiation=None, ozone=None, humidity=None, surface=None,
+                 cloud=None, convection=None, lapserate=None, upwelling=None,
+                 aerosol=None,
+                 ):
+=======
     def __init__(
         self,
         atmosphere,
@@ -55,10 +63,10 @@ class RCE:
         upwelling=None,
         diurnal_cycle=False,
         co2_adjustment_timescale=np.nan,
-        logevery=None, 
-        aerosol=None,
+        logevery=None,
         timestep_adjuster=None,
     ):
+>>>>>>> konradLukas/master
         """Set-up a radiative-convective model.
 
         Parameters:
@@ -117,9 +125,11 @@ class RCE:
             upwelling (konrad.upwelling): Upwelling model.
                 Defaults to :class:`konrad.upwelling.NoUpwelling`.
 
-            aerosol (konrad.aerool): Aerosol model. 
-                Defaults to :class: konrad.aerosol.NoAerosol.
+<<<<<<< HEAD
+            aerosol (konrad.aerosol): Aerosol model.
+                Defaults to :class:`konrad.aerosol.NoAerosol`.
 
+=======
             diurnal_cycle (bool): Toggle diurnal cycle of solar angle.
 
             co2_adjustment_timescale (int/float): Adjust CO2 concentrations
@@ -141,6 +151,7 @@ class RCE:
                 to calculate a new timestep (`f(timestep, deltaT)`).
 
                 Default (`None`) is keeping the given timestep fixed.
+>>>>>>> konradLukas/master
         """
         # Sub-models.
         self.atmosphere = atmosphere

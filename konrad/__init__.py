@@ -10,7 +10,15 @@ submodels need to fulfill requirements to make interaction possible. These
 requirements are enforced by the use of abstract base classes.
 """
 import logging
+import warnings
 from os.path import (join, dirname)
+
+# Mute annoying `FutureWarning` within Sympl.
+warnings.filterwarnings(
+    action="ignore",
+    category=FutureWarning,
+    module="sympl",
+)
 
 __version__ = open(join(dirname(__file__), 'VERSION')).read().strip()
 
@@ -33,12 +41,17 @@ from . import utils
 from .core import RCE
 
 
-# Basic configuration for all loggers used within konrad.
-# NOTE: The process name is included for more verbose logs in multiprocessing.
-logging.basicConfig(
-    # filename='log.txt',
-    level=logging.INFO,
-    datefmt='%Y-%m-%d %H:%M:%S',
-    style='{',  # Allows to use format string syntax in the next line.
-    format='{asctime} {processName}:{levelname}:{name}:{message}',
-    )
+def enable_logging():
+    """Enable a basic logging configuration.
+
+    The process name is included for more verbose logs in multiprocessing.
+
+    See also:
+        :func:``logging.basicConfig``
+    """
+    logging.basicConfig(
+        level=logging.INFO,
+        datefmt='%Y-%m-%d %H:%M:%S',
+        style='{',  # Allows to use format string syntax in the next line.
+        format='{asctime} {processName}:{levelname}:{name}:{message}',
+        )

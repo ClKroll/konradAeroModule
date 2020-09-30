@@ -1,5 +1,6 @@
 """Common utility functions. """
 import copy
+import itertools
 import logging
 from datetime import timedelta
 from numbers import Number
@@ -30,6 +31,10 @@ __all__ = [
     'parse_fraction_of_day',
     'standard_atmosphere',
     'prefix_dict_keys',
+    'is_decreasing',
+    'calculate_combined_weights',
+    'gaussian',
+    'dp_from_dz',
 ]
 
 logger = logging.getLogger(__name__)
@@ -413,21 +418,23 @@ def parse_fraction_of_day(time):
     """Calculate the fraction of a day.
 
     Parameters:
-        time (str or float): Specified time delta (e.g. '6h').
+        time (str, float, or timedelta): Specified time delta (e.g. '6h').
             Valid units:
+
                 * 's' for seconds
                 * 'm' for minutes
                 * 'h' for hours
                 * 'd' for days
                 * 'w' for weeks
+
             If numeric, return value.
 
     Returns:
-        float: Fraction of a day.
+        datetime.timedelta: Object representing the time span.
 
     Example:
         >>> parse_fraction_of_day('12h')
-        0.5
+        datetime.timedelta(seconds=43200)
     """
     mapping = {
         's': 'seconds',
@@ -437,11 +444,13 @@ def parse_fraction_of_day(time):
         'w': 'weeks',
     }
 
+    if isinstance(time, timedelta):
+        return time
     if isinstance(time, str):
         value, period = float(time[:-1]), mapping[time[-1]]
-        return timedelta(**{period: value}).total_seconds() / 3600 / 24
+        return timedelta(**{period: value})
     elif isinstance(time, Number):
-        return time
+        return timedelta(days=time)
 
 
 # TODO: Replace with ``typhon.physics.standard_atmosphere`` after next
@@ -514,3 +523,46 @@ def prefix_dict_keys(dictionary, prefix, delimiter='/'):
     """
     return {delimiter.join((prefix, key)): val
             for key, val in dictionary.items()}
+
+
+def is_decreasing(a):
+    """Check if a given array is monotonically decreasing."""
+    return np.all(np.diff(a) < 0)
+
+
+def calculate_combined_weights(weights):
+    """Calculate combined probabilities for a set of single probabilities."""
+    binary_table = np.array(
+        list(itertools.product([False, True], repeat=len(weights)))
+    )
+
+    pij = np.zeros_like(binary_table, dtype=float)
+    for (i, j), is_cloudy in np.ndenumerate(binary_table):
+        pij[i, j] = 1 - is_cloudy + (2 * is_cloudy - 1) * weights[j]
+
+    return binary_table, np.prod(pij, axis=1)
+
+def gaussian(x, m, s) :
+        """
+        Parameters:
+            x (float): Abscissa
+            m (float): Mean of the gaussian
+            s (float): Standard deviation of the gaussian
+
+        Returns (float) the value of a gaussian distribution of mean m and std s at point x. 
+        """ 
+        X = (x-m)**2 / (2*s**2)
+        return np.exp(-X)
+
+def dp_from_dz(dz, p, T):
+    """
+    Obtain the pressure variation dp for an altitude variation dz around the pressure p.
+
+    Parameters:
+        dz (float): altitude variation in m.
+        p (float): pressure at the center of dz in Pa.
+        T (float): temperature at the center of dz in K.
+    """
+
+    dp = ty.physics.density(p, T) * ty.constants.g * dz
+    return dp
