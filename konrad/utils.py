@@ -37,16 +37,16 @@ logger = logging.getLogger(__name__)
 class Error(BaseException,metaclass=abc.ABCMeta):
     pass
 
-class ValueTooSmallError(Error):
-    """"The expected_tropopause_pressure must be larger than the top_pressure"""
-    print('The expected_tropopause_pressure must be larger than the top_pressure')
-    pass
-
-class ValueTooLargeError(Error):
-    """"The expected_tropopause_pressure must be smaller than the surface_pressure"""
-    print('The expected_tropopause_pressure must be smaller than the surface_pressure')
-    pass
-#could use ValueError
+#class ValueTooSmallError(Error):
+#    """"The expected_tropopause_pressure must be larger than the top_pressure"""
+#    print('The expected_tropopause_pressure must be larger than the top_pressure')
+#    pass
+#
+#class ValueTooLargeError(Error):
+#    """"The expected_tropopause_pressure must be smaller than the surface_pressure"""
+#    print('The expected_tropopause_pressure must be smaller than the surface_pressure')
+#    pass
+##could use ValueError
     
 def append_description(dataset, description=None):
     """Append variable attributes to a given dataset.
@@ -217,90 +217,94 @@ def get_quadratic_pgrid(surface_pressure=1000e2, top_pressure=1, num=200):
 
     return np.exp(-lnp/2 * (i**2 + i) + lnp) * top_pressure
 
-def get_pressure_grids_enhTropopause(surface_pressure=1000e2, top_pressure=1, add_tropopause_lev=50, num=400, 
-                                     expected_tropopause_pressure=200):
-    r"""Create matching pressures at full-levels and half-levels.
-
-    The half-levels range from ``surface_pressure`` to 1 Pa.
-    The region around the tropopause is better resolved adding "add_tropopause_lev" 
-    this region.
-
-    Parameters:
-        surface_pressure (float): Pressure of the lowest half-level [Pa].
-        top_pressure (float): Pressure at the highest half-level [Pa].
-        num (int): Number of **full** pressure levels.
-        add_tropopause_lev (int): number of additional pressure levels in tropopause
-            region
-        expected_tropopause_pressure(int):  pressure at which the cold point is
-            expected to be located during experiment [Pa]
-
-    Returns:
-        ndarray, ndarray: Full-level pressure, half-level pressure [Pa].
-
-    See also:
-        ``konrad.utils.get_quadratic_pgrid``
-        ''konrad.utils.get_pressure_grids''
-    """
-    #try:
-            
-    if expected_tropopause_pressure>surface_pressure:
-        raise ValueTooLargeError
-    elif expected_tropopause_pressure<top_pressure:
-        raise ValueTooSmallError
-    else:
-        if add_tropopause_lev>200:
-            print('Please be aware that too many additional levels will slow down the \
-                  calculations')
-    
-        #calculate expected tropopause level from pressure using exp function
-        #plev=np.exp(-lnp/2 * (i**2 + i) + lnp) * top_pressure   
-    lnp = np.log(surface_pressure / top_pressure)
-    a=-lnp/2
-    b=a
-    c=(np.log(top_pressure)-np.log(expected_tropopause_pressure)+lnp)
-    sqrRoot=np.sqrt(b*b-4*a*c)
-    x1=(-b+sqrRoot)/(2*a)
-    x2=(-b-sqrRoot)/(2*a)
-    
-    if x1>0:
-        expected_tropopause_lev=floor(x1*num)# calculate it
-    elif x2>0:
-        expected_tropopause_lev=floor(x2*num)# calculate it
-    else:
-            #expected_tropopause_lev=100
-        print('else')
-            
-        #print('exp_tropopause_level: '+expected_tropopause_lev)
-    lowerLimit=0
-    upperLimit=0
-    if (add_tropopause_lev%2)==0:#even
-        lowerLimit=expected_tropopause_lev-(add_tropopause_lev/2)
-        upperLimit=lowerLimit+add_tropopause_lev
-    else:#odd
-        lowerLimit=expected_tropopause_lev-((add_tropopause_lev-1)/2)
-        upperLimit=lowerLimit+add_tropopause_lev
-    
-        
-    num2=num+add_tropopause_lev
-    firstLimit=lowerLimit/num2
-    secondLimit=upperLimit/num2
-    
-    x=np.arange(0,firstLimit,firstLimit/(firstLimit*num)).astype(float)
-    xx=np.arange(firstLimit,secondLimit,(secondLimit-firstLimit)/(np.abs(secondLimit-firstLimit)*num+50)).astype(float)
-    xxx=np.arange(secondLimit,1,(1-secondLimit)/(num*(1-secondLimit))).astype(float)
-    i=np.concatenate((x,xx,xxx))
-        
-    if np.shape(i)[0]>num2:
-        i=i[:-1]
-    
-    lnp = np.log(surface_pressure / top_pressure)
-    
-    phlev=np.exp(-lnp/2 * (i**2 + i) + lnp) * top_pressure  
-    plev = plev_from_phlev(phlev)
-    
-    return plev, phlev
-   # except ValueTooSmallError:
-   #     print('this value is too small')
+#def get_pressure_grids_enhTropopause(surface_pressure=1003e2, top_pressure=0.1, add_tropopause_lev=50, num=400, 
+#                                     expected_tropopause_pressure=200):
+#    r"""Create matching pressures at full-levels and half-levels.
+#
+#    The half-levels range from ``surface_pressure`` to 1 Pa.
+#    The region around the tropopause is better resolved adding "add_tropopause_lev" 
+#    this region.
+#
+#    Parameters:
+#        surface_pressure (float): Pressure of the lowest half-level [Pa].
+#        top_pressure (float): Pressure at the highest half-level [Pa].
+#        num (int): Number of **full** pressure levels.
+#        add_tropopause_lev (int): number of additional pressure levels in tropopause
+#            region
+#        expected_tropopause_pressure(int):  pressure at which the cold point is
+#            expected to be located during experiment [Pa]
+#
+#    Returns:
+#        ndarray, ndarray: Full-level pressure, half-level pressure [Pa].
+#
+#    See also:
+#        ``konrad.utils.get_quadratic_pgrid``
+#        ''konrad.utils.get_pressure_grids''
+#    """
+#    #try:
+#            
+#    if expected_tropopause_pressure>surface_pressure:
+#        print('expected_tropopause_pressure:' + str(expected_tropopause_pressure))
+#        print('surface_pressure:' + str(surface_pressure))
+#        raise ValueTooLargeError(expected_tropopause_pressure,surface_pressure)
+#    elif expected_tropopause_pressure<top_pressure:
+#        print('expected_tropopause_pressure:' + str(expected_tropopause_pressure))
+#        print('top_pressure:' + str(top_pressure))
+#        raise ValueTooSmallError
+#    else:
+#        if add_tropopause_lev>200:
+#            print('Please be aware that too many additional levels will slow down the \
+#                  calculations')
+#    
+#        #calculate expected tropopause level from pressure using exp function
+#        #plev=np.exp(-lnp/2 * (i**2 + i) + lnp) * top_pressure   
+#    lnp = np.log(surface_pressure / top_pressure)
+#    a=-lnp/2
+#    b=a
+#    c=(np.log(top_pressure)-np.log(expected_tropopause_pressure)+lnp)
+#    sqrRoot=np.sqrt(b*b-4*a*c)
+#    x1=(-b+sqrRoot)/(2*a)
+#    x2=(-b-sqrRoot)/(2*a)
+#    
+#    if x1>0:
+#        expected_tropopause_lev=floor(x1*num)# calculate it
+#    elif x2>0:
+#        expected_tropopause_lev=floor(x2*num)# calculate it
+#    else:
+#            #expected_tropopause_lev=100
+#        print('else')
+#            
+#        #print('exp_tropopause_level: '+expected_tropopause_lev)
+#    lowerLimit=0
+#    upperLimit=0
+#    if (add_tropopause_lev%2)==0:#even
+#        lowerLimit=expected_tropopause_lev-(add_tropopause_lev/2)
+#        upperLimit=lowerLimit+add_tropopause_lev
+#    else:#odd
+#        lowerLimit=expected_tropopause_lev-((add_tropopause_lev-1)/2)
+#        upperLimit=lowerLimit+add_tropopause_lev
+#    
+#        
+#    num2=num+add_tropopause_lev
+#    firstLimit=lowerLimit/num2
+#    secondLimit=upperLimit/num2
+#    
+#    x=np.arange(0,firstLimit,firstLimit/(firstLimit*num)).astype(float)
+#    xx=np.arange(firstLimit,secondLimit,(secondLimit-firstLimit)/(np.abs(secondLimit-firstLimit)*num+50)).astype(float)
+#    xxx=np.arange(secondLimit,1,(1-secondLimit)/(num*(1-secondLimit))).astype(float)
+#    i=np.concatenate((x,xx,xxx))
+#        
+#    if np.shape(i)[0]>num2:
+#        i=i[:-1]
+#    
+#    lnp = np.log(surface_pressure / top_pressure)
+#    
+#    phlev=np.exp(-lnp/2 * (i**2 + i) + lnp) * top_pressure  
+#    plev = plev_from_phlev(phlev)
+#    
+#    return plev, phlev
+#   # except ValueTooSmallError:
+#   #     print('this value is too small')
    
 def get_pressure_grids(surface_pressure=1000e2, top_pressure=1, num=200):
     r"""Create matching pressures at full-levels and half-levels.

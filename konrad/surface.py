@@ -135,7 +135,51 @@ class SurfaceFixedTemperature(Surface):
             Dummy function to fulfill abstract class requirements.
         """
         return
+    
+class SlabOcean(Surface):
+    """Surface model with adjustable temperature."""
+    def __init__(self, *args, depth=1.0, heat_sink=66.0, **kwargs):
+        """Initialize a slab ocean.
+        Parameters:
+            heat_sink (float): Flux of energy out of the surface [W m^-2].
+                The default value represents a surface enthalpy transport to
+                the extra-tropics.
+            depth (float): Ocean depth [m].
+            albedo (float): Surface albedo [1].
+            temperature (float): Initial surface temperature [K].
+            longwave_emissivity (float): Longwave emissivity [1].
+            height (float): Surface height [m].
+        """
+        super().__init__(*args, **kwargs)
 
+        self.rho = constants.density_sea_water
+        self.c_p = constants.specific_heat_capacity_sea_water
+        self.depth = depth
+
+        self.heat_capacity = self.rho * self.c_p * depth
+        self.heat_sink = heat_sink
+
+    def adjust(self, sw_down, sw_up, lw_down, lw_up, timestep):
+        """Increase the surface temperature using given radiative fluxes. Take
+        into account a heat sink at the surface, as if heat is transported out
+        of the tropics we are modelling.
+        Parameters:
+            sw_down (float): Shortwave downward flux [W / m**2].
+            sw_up (float): Shortwave upward flux [W / m**2].
+            lw_down (float): Longwave downward flux [W / m**2].
+            lw_up (float): Longwave upward flux [W / m**2].
+            timestep (float): Timestep in days.
+        """
+        timestep *= 24 * 60 * 60  # Convert timestep to seconds.
+
+        net_flux = (sw_down - sw_up) + (lw_down - lw_up)
+
+        logger.debug(f'Net flux: {net_flux:.2f} W /m^2')
+
+        self['temperature'] += (timestep * (net_flux - self.heat_sink) /
+                                self.heat_capacity)
+
+        logger.debug("Surface temperature: {self['temperature'][0]:.4f} K")
 
 #TODO: Rename `SlabOcean`?
 class SurfaceHeatCapacity(Surface):

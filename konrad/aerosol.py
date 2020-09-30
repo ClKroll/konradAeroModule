@@ -51,7 +51,7 @@ The aerosol class has a set of parameters:
                          fluxes using them
     includeScattering: includes SW scattering component
                         (only for 'all_aerosol_properties')
-    includeScattering: includes SW absorption component
+    includeAbsorption: includes SW absorption component
                         (only for 'all_aerosol_properties')
     includeLWForcing: if True: imports the LW forcing files and calculates the radiative
                          fluxes using them
@@ -71,13 +71,14 @@ from konrad.cloud import get_aerosol_waveband_data_array
 
 
 class Aerosol(metaclass=abc.ABCMeta):
-    def __init__(self,atmNumlevels, aerosol_type='no_aerosol', aerosolLevelShiftInput=0,monthsAfterEruption=2,includeSWForcing=True,\
+    def __init__(self,atmNumlevels, aerosol_type='no_aerosol',monthsAfterEruption=8, aerosolLevelShiftInput=0,includeSWForcing=True,\
                  includeLWForcing=True,includeScattering=True,includeAbsorption=True):
          
         self._aerosol_type = aerosol_type
         self.includeSWForcing=includeSWForcing
         self.includeLWForcing=includeLWForcing
         self.aerosolLevelShift=aerosolLevelShiftInput
+        self.monthsAfterEruption=monthsAfterEruption
         self.includeScattering=includeScattering
         self.includeAbsorption=includeAbsorption
         self.optical_thickness_due_to_aerosol_sw = \
@@ -107,10 +108,11 @@ class VolcanoAerosol(Aerosol):
     '''
     CMIP6 volcanic aerosols (Mount Pinatubo eruption)
     '''
-    def __init__(self,atmNumlevels, aerosolLevelShiftInput=0,includeSWForcing=True,\
+    def __init__(self,atmNumlevels, monthsAfterEruption, aerosolLevelShiftInput=0,includeSWForcing=True,\
                  includeLWForcing=True,includeScattering=True,includeAbsorption=True):
         super().__init__(atmNumlevels,aerosol_type='all_aerosol_properties')
         self.aerosolLevelShift=aerosolLevelShiftInput
+        self.monthsAfterEruption=monthsAfterEruption
         self.numlevels=atmNumlevels
         self.includeSWForcing=includeSWForcing
         self.includeLWForcing=includeLWForcing
@@ -129,27 +131,35 @@ class VolcanoAerosol(Aerosol):
                 extEarth = xr.open_dataset(
                         os.path.join(
                                 os.path.dirname(__file__),
-                                'data/aerosolData/23dataextEarth1991.nc'
+                                #'data/aerosolData/23dataextEarth1991.nc'
                                 #'data/aerosolData/23dataextEarth1992.nc'
+                                #'data/aerosolData/eva/23data10extEarthOrder.nc'
+                                'data/aerosolData/eva/23Tdata10extEarthOrder.nc'
                                 ))
             if self.includeSWForcing:
                 extSun = xr.open_dataset(
                         os.path.join(
                                 os.path.dirname(__file__),
-                                'data/aerosolData/23dataextSun1991.nc'
+                                #'data/aerosolData/23dataextSun1991.nc'
                                 #'data/aerosolData/23dataextSun1992.nc'
+                                #'data/aerosolData/eva/23data10extSunOrder.nc'
+                                'data/aerosolData/eva/23Tdata10extSunOrder.nc'
                                 ))
                 gSun = xr.open_dataset(
                         os.path.join(
                                 os.path.dirname(__file__),
-                                'data/aerosolData/23datagSun1991.nc'
+                                #'data/aerosolData/23datagSun1991.nc'
                                 #'data/aerosolData/23datagSun1992.nc'
+                                #'data/aerosolData/eva/23data10gSunOrder.nc'
+                                'data/aerosolData/eva/23Tdata10gSunOrder.nc'
                                 ))
                 omegaSun = xr.open_dataset(
                         os.path.join(
                                 os.path.dirname(__file__),
-                                'data/aerosolData/23dataomegaSun1991.nc'
+                                #'data/aerosolData/23dataomegaSun1991.nc'
                                 #'data/aerosolData/23dataomegaSun1992.nc'
+                                #'data/aerosolData/eva/23data10omegaSunOrder.nc'
+                                'data/aerosolData/eva/23Tdata10omegaSunOrder.nc'
                                 ))
             heights = self.calculateHeightLevels(atmosphere)
             #the input data has to be scaled to fit to model levels
@@ -172,7 +182,7 @@ class VolcanoAerosol(Aerosol):
                     self.optical_thickness_due_to_aerosol_lw[lw_band, :] = \
                         sc.interpolate.interp1d(
                             extEarth.altitude.values,
-                            extEarth.ext_earth[8,lw_band, :].values,
+                            extEarth.ext_earth[self.monthsAfterEruption,lw_band, :].values,
                             #extEarth.ext_earth[lw_band, :, 1].values,
                             bounds_error=False,
                             fill_value=0)(heights)*scaling
@@ -182,21 +192,21 @@ class VolcanoAerosol(Aerosol):
                     self.optical_thickness_due_to_aerosol_sw[sw_band, :] = \
                         sc.interpolate.interp1d(
                             extSun.altitude.values,
-                            extSun.ext_sun[sw_band,8, :].values,
+                            extSun.ext_sun[sw_band,self.monthsAfterEruption, :].values,
                             #extSun.ext_sun[sw_band, :, 1],
                             bounds_error=False,
                             fill_value=0)(heights)*scaling
                     self.asymmetry_factor_aerosol_sw[sw_band, :] = \
                         sc.interpolate.interp1d(
                             gSun.altitude.values,
-                            gSun.g_sun[sw_band,8, :].values,
+                            gSun.g_sun[sw_band,self.monthsAfterEruption, :].values,
                             #gSun.g_sun[sw_band, :, 1].values,
                             bounds_error=False,
                             fill_value=0)(heights)
                     self.single_scattering_albedo_aerosol_sw[sw_band, :] = \
                         sc.interpolate.interp1d(
                             omegaSun.altitude.values,
-                            omegaSun.omega_sun[sw_band,8, :].values,
+                            omegaSun.omega_sun[sw_band,self.monthsAfterEruption, :].values,
                             #omegaSun.omega_sun[sw_band, :, 1].values,
                             bounds_error=False,
                             fill_value=0)(heights)
@@ -233,6 +243,95 @@ class VolcanoAerosol(Aerosol):
                             raise ValueError('For aerosols scattering and absorption can not both be deactivated')
                     except (ValueError):
                         exit('Please choose valid input data.')
+                    
+
+    def calculateHeightLevels(self, atmosphere):
+        '''Used to translate the aerosol forcing data given as a function of height 
+        to aerosol forcing data as a function of pressure levels
+        '''
+        heights = ty.pressure2height(atmosphere['plev'], atmosphere['T'][0, :])/1000
+        return heights
+
+class BackgroundAerosolStrato(Aerosol):
+    '''
+    stratospheric aerosol background
+    '''
+    def __init__(self,atmNumlevels,monthsAfterEruption=8,includeSWForcing=True,\
+                 includeLWForcing=True):
+        super().__init__(atmNumlevels,aerosol_type='all_aerosol_properties')
+        self.numlevels=atmNumlevels
+        self.includeSWForcing=includeSWForcing
+        self.includeLWForcing=includeLWForcing
+        self.monthsAfterEruption=monthsAfterEruption
+
+    def update_aerosols(self, time, atmosphere):
+        '''
+        Import the stratospheric aerosol background data in first time step, taking into account
+        the parameter settings of the VolcanoAerosol class.
+        Translate from height dependance to pressure dependance.
+        The aerosol layer is kept fixed and constant throughout the following run.
+        '''
+        if not np.count_nonzero(self.optical_thickness_due_to_aerosol_sw.values):
+            if self.includeLWForcing:
+                extEarth = xr.open_dataset(
+                        os.path.join(
+                                os.path.dirname(__file__),
+                                'data/aerosolData/eva/23data0extEarthOrder.nc'
+                                ))
+            if self.includeSWForcing:
+                extSun = xr.open_dataset(
+                        os.path.join(
+                                os.path.dirname(__file__),
+                                'data/aerosolData/eva/23data0extSunOrder.nc'
+                                ))
+                gSun = xr.open_dataset(
+                        os.path.join(
+                                os.path.dirname(__file__),
+                                'data/aerosolData/eva/23data0gSunOrder.nc'
+                                ))
+                omegaSun = xr.open_dataset(
+                        os.path.join(
+                                os.path.dirname(__file__),
+                                'data/aerosolData/eva/23data0omegaSunOrder.nc'
+                                ))
+            heights = self.calculateHeightLevels(atmosphere)
+            #the input data has to be scaled to fit to model levels
+            #for compatability with rrtmg input format
+            scaling=np.gradient(heights)
+            
+            if self.includeLWForcing:
+                for lw_band in range(np.shape(extEarth.terrestrial_bands)[0]):
+                    self.optical_thickness_due_to_aerosol_lw[lw_band, :] = \
+                        sc.interpolate.interp1d(
+                            extEarth.altitude.values,
+                            extEarth.ext_earth[self.monthsAfterEruption,lw_band, :].values,
+                            #extEarth.ext_earth[lw_band, :, 1].values,
+                            bounds_error=False,
+                            fill_value=0)(heights)*scaling
+                        
+            if self.includeSWForcing:
+                for sw_band in range(np.shape(extSun.solar_bands)[0]):
+                    self.optical_thickness_due_to_aerosol_sw[sw_band, :] = \
+                        sc.interpolate.interp1d(
+                            extSun.altitude.values,
+                            extSun.ext_sun[sw_band,self.monthsAfterEruption, :].values,
+                            #extSun.ext_sun[sw_band, :, 1],
+                            bounds_error=False,
+                            fill_value=0)(heights)*scaling
+                    self.asymmetry_factor_aerosol_sw[sw_band, :] = \
+                        sc.interpolate.interp1d(
+                            gSun.altitude.values,
+                            gSun.g_sun[sw_band,self.monthsAfterEruption, :].values,
+                            #gSun.g_sun[sw_band, :, 1].values,
+                            bounds_error=False,
+                            fill_value=0)(heights)
+                    self.single_scattering_albedo_aerosol_sw[sw_band, :] = \
+                        sc.interpolate.interp1d(
+                            omegaSun.altitude.values,
+                            omegaSun.omega_sun[sw_band,self.monthsAfterEruption, :].values,
+                            #omegaSun.omega_sun[sw_band, :, 1].values,
+                            bounds_error=False,
+                            fill_value=0)(heights)
                     
 
     def calculateHeightLevels(self, atmosphere):

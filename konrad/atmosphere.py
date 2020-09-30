@@ -128,7 +128,7 @@ class Atmosphere(Component):
         #  Consider a more flexible user interface.
 
         # Create a Dataset with time and pressure dimension.
-        d = cls(phlev=dictionary['phlev'])
+        d = cls(phlev=dictionary['phlev'])    #debug trail should be phlev here
 
         for var in cls.atmosphere_variables:
             val = dictionary.get(var)
@@ -210,7 +210,7 @@ class Atmosphere(Component):
             np.round(self['T'][-1, 0], 3),  # Surface temperature
         ))
 
-    def refine_plev(self, pgrid, **kwargs):
+    def refine_plev(self, pgrid, phgrid, **kwargs):
         """Refine the pressure grid of an atmosphere object.
 
         Note:
@@ -232,6 +232,7 @@ class Atmosphere(Component):
         datadict = dict()
 
         datadict['plev'] = pgrid  # Store new pressure grid.
+        datadict['phlev'] = phgrid  # Store new pressure grid.
 
         # Loop over all atmospheric variables...
         for variable in self.atmosphere_variables:
@@ -255,6 +256,7 @@ class Atmosphere(Component):
 
         # Calculate the geopotential height.
         new_atmosphere.update_height()
+        #del datadict['phlev']
 
         return new_atmosphere
 
@@ -266,7 +268,7 @@ class Atmosphere(Component):
         """
         datadict = dict()
         datadict['plev'] = copy(self['plev'])  # Copy pressure grid.
-        datadict['phlev'] = copy(self['phlev'])  # Copy pressure grid.
+        datadict['phlev'] = copy(self['phlev'])  #Copy pressure grid.
 
         # Create copies (and not references) of all atmospheric variables.
         for variable in self.atmosphere_variables:
