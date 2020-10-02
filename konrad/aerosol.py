@@ -131,35 +131,35 @@ class VolcanoAerosol(Aerosol):
                 extEarth = xr.open_dataset(
                         os.path.join(
                                 os.path.dirname(__file__),
-                                #'data/aerosolData/23dataextEarth1991.nc'
+                                'data/aerosolData/23dataextEarth1991.nc'
                                 #'data/aerosolData/23dataextEarth1992.nc'
                                 #'data/aerosolData/eva/23data10extEarthOrder.nc'
-                                'data/aerosolData/eva/23Tdata10extEarthOrder.nc'
+                                # 'data/aerosolData/eva/23Tdata10extEarthOrder.nc'
                                 ))
             if self.includeSWForcing:
                 extSun = xr.open_dataset(
                         os.path.join(
                                 os.path.dirname(__file__),
-                                #'data/aerosolData/23dataextSun1991.nc'
+                                'data/aerosolData/23dataextSun1991.nc'
                                 #'data/aerosolData/23dataextSun1992.nc'
                                 #'data/aerosolData/eva/23data10extSunOrder.nc'
-                                'data/aerosolData/eva/23Tdata10extSunOrder.nc'
+                                # 'data/aerosolData/eva/23Tdata10extSunOrder.nc'
                                 ))
                 gSun = xr.open_dataset(
                         os.path.join(
                                 os.path.dirname(__file__),
-                                #'data/aerosolData/23datagSun1991.nc'
+                                'data/aerosolData/23datagSun1991.nc'
                                 #'data/aerosolData/23datagSun1992.nc'
                                 #'data/aerosolData/eva/23data10gSunOrder.nc'
-                                'data/aerosolData/eva/23Tdata10gSunOrder.nc'
+                                # 'data/aerosolData/eva/23Tdata10gSunOrder.nc'
                                 ))
                 omegaSun = xr.open_dataset(
                         os.path.join(
                                 os.path.dirname(__file__),
-                                #'data/aerosolData/23dataomegaSun1991.nc'
+                                'data/aerosolData/23dataomegaSun1991.nc'
                                 #'data/aerosolData/23dataomegaSun1992.nc'
                                 #'data/aerosolData/eva/23data10omegaSunOrder.nc'
-                                'data/aerosolData/eva/23Tdata10omegaSunOrder.nc'
+                                # 'data/aerosolData/eva/23Tdata10omegaSunOrder.nc'
                                 ))
             heights = self.calculateHeightLevels(atmosphere)
             #the input data has to be scaled to fit to model levels

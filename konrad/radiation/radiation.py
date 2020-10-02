@@ -77,7 +77,8 @@ class Radiation(Component, metaclass=abc.ABCMeta):
     def calc_radiation(self, atmosphere, surface, cloud, aerosol):
         pass
 
-    def update_heatingrates(self, atmosphere, surface, cloud, aerosol):
+    def update_heatingrates(self, atmosphere, surface=None, cloud=None,
+                            aerosol=None):
         """Returns `xr.Dataset` containing radiative transfer results."""
         # If only the atmospheric state is given, assume clear-sky
         # and extrapolate the surface temperatures.
@@ -87,6 +88,11 @@ class Radiation(Component, metaclass=abc.ABCMeta):
             surface = SlabOcean.from_atmosphere(atmosphere)
 
         if cloud is None:
+            cloud = ClearSky.from_atmosphere(atmosphere)
+            
+        if aerosol is None:
+            aerosol = aerosol.NoAerosol()
+            
         self.calc_radiation(atmosphere, surface, cloud, aerosol)
 
         # self.correct_bias(rad_dataset)

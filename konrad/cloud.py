@@ -40,8 +40,7 @@ from scipy.interpolate import interp1d
 from sympl import DataArray
 
 from konrad.component import Component
-from konrad import utils
-from konrad.cloudoptics import EchamCloudOptics
+
 
 logger = logging.getLogger(__name__)
 
@@ -127,9 +126,9 @@ def get_waveband_data_array(values, units='dimensionless', numlevels=200,
 def get_aerosol_waveband_data_array(values, units='dimensionless', numlevels=200,
                             sw=True):
     """Return a DataArray of values."""
-    a=get_waveband_data_array(values, units=units, numlevels=numlevels, sw=sw) 
+    a=get_waveband_data_array(values, units=units, numlevels=numlevels, sw=sw)
     return a.T
- 
+
 
 def get_rectangular_profile(z, value, ztop, depth):
     """Produce a rectangular profile, an array containing zeros and the value
