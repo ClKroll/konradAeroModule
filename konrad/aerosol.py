@@ -276,23 +276,23 @@ class BackgroundAerosolStrato(Aerosol):
                 extEarth = xr.open_dataset(
                         os.path.join(
                                 os.path.dirname(__file__),
-                                'data/aerosolData/eva/23data0extEarthOrder.nc'
+                                'data/aerosolData/eva/23Tdata0extEarthOrder.nc'
                                 ))
             if self.includeSWForcing:
                 extSun = xr.open_dataset(
                         os.path.join(
                                 os.path.dirname(__file__),
-                                'data/aerosolData/eva/23data0extSunOrder.nc'
+                                'data/aerosolData/eva/23Tdata0extSunOrder.nc'
                                 ))
                 gSun = xr.open_dataset(
                         os.path.join(
                                 os.path.dirname(__file__),
-                                'data/aerosolData/eva/23data0gSunOrder.nc'
+                                'data/aerosolData/eva/23Tdata0gSunOrder.nc'
                                 ))
                 omegaSun = xr.open_dataset(
                         os.path.join(
                                 os.path.dirname(__file__),
-                                'data/aerosolData/eva/23data0omegaSunOrder.nc'
+                                'data/aerosolData/eva/23Tdata0omegaSunOrder.nc'
                                 ))
             heights = self.calculateHeightLevels(atmosphere)
             #the input data has to be scaled to fit to model levels
