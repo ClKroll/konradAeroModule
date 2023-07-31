@@ -15,6 +15,7 @@ from konrad.cloud import Cloud, ClearSky
 from konrad.convection import Convection, HardAdjustment
 from konrad.lapserate import LapseRate, MoistLapseRate
 from konrad.upwelling import Upwelling, NoUpwelling
+from konrad.aerosol import Aerosol, NoAerosol
 
 logger = logging.getLogger(__name__)
 
@@ -54,6 +55,7 @@ class RCE:
         convection=None,
         lapserate=None,
         upwelling=None,
+        aerosol=None,
         diurnal_cycle=False,
         co2_adjustment_timescale=np.nan,
         logevery=None,
@@ -124,6 +126,9 @@ class RCE:
             upwelling (konrad.upwelling): Upwelling model.
                 Defaults to :class:`konrad.upwelling.NoUpwelling`.
 
+            aerosol (konrad.aerool): Aerosol model.
+                Defaults to :class:`konrad.aerosol.NoAerosol`.
+
             diurnal_cycle (bool): Toggle diurnal cycle of solar angle.
 
             co2_adjustment_timescale (int/float): Adjust CO2 concentrations
@@ -176,6 +181,11 @@ class RCE:
         # Convection
         self.convection = utils.return_if_type(
             convection, "convection", Convection, HardAdjustment()
+        )
+
+        # Aerosol
+        self.aerosol = utils.return_if_type(
+            aerosol, "aerosol", Aerosol, NoAerosol(self.atmosphere)
         )
 
         # Critical lapse-rate
@@ -285,7 +295,7 @@ class RCE:
         # Checks whether the difference is below the threshold
         test1 = (np.abs(self.newDN) / self.timestep_days) <= self.delta
         # Checks whether the second order difference is below the threshold
-        test2 = (np.abs(self.newDDN) / self.timestep_days ** 2) <= self.delta2
+        test2 = (np.abs(self.newDDN) / self.timestep_days**2) <= self.delta2
 
         # Stores the above-calculated value for the next iteration
         self.oldDN = self.newDN
@@ -310,7 +320,7 @@ class RCE:
             logger.debug(d_txt.format(self.newDN / self.timestep_days, self.delta))
             d_txt = "Delta (Delta N (TOA)): {0:2.2e} (Threshold: {1:2.2e})"
             logger.debug(
-                d_txt.format(self.newDDN / self.timestep_days ** 2, self.delta2)
+                d_txt.format(self.newDDN / self.timestep_days**2, self.delta2)
             )
 
         # If the equilibrium is larger than the threshold count, it declares
@@ -366,6 +376,7 @@ class RCE:
                 atmosphere=self.atmosphere,
                 surface=self.surface,
                 cloud=self.cloud,
+                aerosol=self.aerosol,
             )
 
             # Applies heating rates and fluxes to the the surface
